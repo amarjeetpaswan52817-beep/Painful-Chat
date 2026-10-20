@@ -15,7 +15,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 let postData = {
   likes: 0,
   comments: [
-    { text: "☠️ WELCOME TO THE HARAMI ZONE ☠️" }
+    { text: "कुछ बातें लफ़्ज़ों में बयाँ नहीं होतीं, बस दिल के किसी कोने में खामोश रहती हैं" }
   ]
 };
 
@@ -40,5 +40,5 @@ io.on('connection', (socket) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`PAINFUL सर्वर पोर्ट ${PORT} पर चालू है`);
+  console.log(`Chapter15 सर्वर पोर्ट ${PORT} पर चालू है`);
 });
