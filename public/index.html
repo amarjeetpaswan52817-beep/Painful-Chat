@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="hi">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CHAPTER 15 — दिल के विचार</title>
+  <title>PAINFUL — दिल के विचार</title>
   <style>
     :root {
       --bg: #0d1117;
@@ -22,7 +23,7 @@
     }
 
     body {
-      background-color: var(--bg);
+      background: var(--bg);
       color: var(--text);
       display: flex;
       justify-content: center;
@@ -44,7 +45,7 @@
 
     header h1 {
       font-size: 2rem;
-      letter-spacing: 2px;
+      letter-spacing: 3px;
       color: #fff;
     }
 
@@ -72,6 +73,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 10px;
       color: var(--muted);
       font-size: 0.85rem;
       margin-bottom: 12px;
@@ -80,6 +82,7 @@
     .admin-controls {
       display: flex;
       gap: 10px;
+      flex-shrink: 0;
     }
 
     .btn-edit, .btn-delete {
@@ -87,30 +90,17 @@
       border: none;
       font-size: 0.8rem;
       cursor: pointer;
-      padding: 2px 6px;
-      border-radius: 4px;
+      padding: 4px;
     }
 
-    .btn-edit {
-      color: #58a6ff;
-    }
-
-    .btn-edit:hover {
-      text-decoration: underline;
-    }
-
-    .btn-delete {
-      color: #f85149;
-    }
-
-    .btn-delete:hover {
-      text-decoration: underline;
-    }
+    .btn-edit { color: #58a6ff; }
+    .btn-delete { color: #f85149; }
 
     .card-body {
       font-size: 1.05rem;
-      line-height: 1.6;
+      line-height: 1.7;
       white-space: pre-line;
+      overflow-wrap: anywhere;
       margin-bottom: 16px;
       color: #f0f6fc;
     }
@@ -132,8 +122,9 @@
       align-items: center;
       gap: 8px;
       font-size: 0.95rem;
-      transition: color 0.2s;
     }
+
+    .action-btn.liked span { color: var(--accent); font-weight: bold; }
 
     .like-img {
       width: 28px;
@@ -141,19 +132,9 @@
       border-radius: 50%;
       object-fit: cover;
       border: 2px solid transparent;
-      vertical-align: middle;
-      transition: transform 0.2s, border-color 0.2s;
     }
 
-    .action-btn.liked .like-img {
-      border-color: var(--accent);
-      transform: scale(1.15);
-    }
-
-    .action-btn.liked span {
-      color: var(--accent);
-      font-weight: bold;
-    }
+    .action-btn.liked .like-img { border-color: var(--accent); }
 
     .comments-section {
       margin-top: 14px;
@@ -176,7 +157,7 @@
       border-radius: 8px;
       font-size: 0.9rem;
       border: 1px solid var(--border);
-      word-break: break-word;
+      overflow-wrap: anywhere;
     }
 
     .comment-form {
@@ -185,18 +166,15 @@
     }
 
     .comment-input {
+      min-width: 0;
       flex: 1;
       background: #0d1117;
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 8px 12px;
+      padding: 10px 12px;
       color: var(--text);
       font-size: 0.9rem;
       outline: none;
-    }
-
-    .comment-input:focus {
-      border-color: #58a6ff;
     }
 
     .submit-btn {
@@ -206,179 +184,326 @@
       border-radius: 6px;
       padding: 8px 14px;
       cursor: pointer;
-      font-size: 0.9rem;
     }
 
-    .submit-btn:hover {
-      background: #2ea043;
+    .empty-state, .error-state {
+      color: var(--muted);
+      text-align: center;
+      padding: 24px 12px;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    @media (max-width: 400px) {
+      .card { padding: 14px; }
+      .card-header { flex-wrap: wrap; }
+      .admin-controls { gap: 6px; }
     }
   </style>
 </head>
 <body>
-
-  <div class="container">
+  <main class="container">
     <header>
-      <h1>CHAPTER 15</h1>
+      <h1>PAINFUL</h1>
       <p>कुछ अनकहे शब्द, दिल के जज़्बात</p>
     </header>
-
-    <div class="feed" id="feed">
-      <!-- सारे विचार यहाँ दिखेंगे -->
-    </div>
-  </div>
+    <section class="feed" id="feed" aria-live="polite">
+      <p class="empty-state">विचार लोड हो रहे हैं...</p>
+    </section>
+  </main>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
     const feed = document.getElementById('feed');
 
+    // MongoDB ObjectId को सभी जगह एक समान string बनाएं।
+    function getPostId(post) {
+      return String(post._id || post.id || '');
+    }
+
+    function getElementId(prefix, postId) {
+      return `${prefix}${postId}`;
+    }
+
+    function escapeHtml(value) {
+      const div = document.createElement('div');
+      div.textContent = String(value ?? '');
+      return div.innerHTML;
+    }
+
+    socket.on('connect', () => {
+      console.log('PAINFUL server connected');
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error.message);
+    });
+
     socket.on('load-posts', (posts) => {
-      feed.innerHTML = '';
+      feed.replaceChildren();
+
+      if (!Array.isArray(posts) || posts.length === 0) {
+        feed.innerHTML = '<p class="empty-state">अभी कोई विचार उपलब्ध नहीं है।</p>';
+        return;
+      }
+
       posts.forEach(post => feed.appendChild(createPostCard(post)));
     });
 
     socket.on('new-post-added', (post) => {
-      const card = createPostCard(post);
-      feed.appendChild(card);
+      const id = getPostId(post);
+      if (!id || document.getElementById(getElementId('post-', id))) return;
+
+      const empty = feed.querySelector('.empty-state');
+      if (empty) empty.remove();
+
+      feed.appendChild(createPostCard(post));
     });
 
     socket.on('post-updated', ({ postId, content }) => {
-      const bodyEl = document.querySelector(`#post-${postId} .card-body`);
-      if (bodyEl) bodyEl.textContent = content;
+      const card = document.getElementById(getElementId('post-', postId));
+      const body = card?.querySelector('.card-body');
+      if (body) body.textContent = content;
     });
 
     socket.on('post-deleted', (postId) => {
-      const card = document.getElementById(`post-${postId}`);
+      const card = document.getElementById(getElementId('post-', postId));
       if (card) card.remove();
+
+      if (!feed.querySelector('.card')) {
+        feed.innerHTML = '<p class="empty-state">अभी कोई विचार उपलब्ध नहीं है।</p>';
+      }
     });
 
     function createPostCard(post) {
+      const postId = getPostId(post);
       const card = document.createElement('article');
+
+      if (!postId) {
+        card.className = 'card';
+        card.textContent = 'इस पोस्ट की ID उपलब्ध नहीं है।';
+        return card;
+      }
+
       card.className = 'card';
-      card.id = `post-${post._id}`;
+      card.id = getElementId('post-', postId);
 
-      // जाँचें कि क्या यूज़र ने इस पोस्ट को पहले से लाइक किया हुआ है
-      const likedPosts = JSON.parse(localStorage.getItem('liked_posts') || '[]');
-      const isLiked = likedPosts.includes(post.id);
+      const likedPosts = JSON.parse(
+        localStorage.getItem('liked_posts') || '[]'
+      ).map(String);
 
-      card.innerHTML = `
-        <div class="card-header">
-          <span>${escapeHtml(post.headerText)}</span>
-          <div class="admin-controls">
-            <button class="btn-edit" onclick="editPost(${post.id})">✏️ Edit</button>
-            <button class="btn-delete" onclick="deletePost(${post.id})">🗑️ Delete</button>
-          </div>
-        </div>
-        <div class="card-body">${escapeHtml(post.content)}</div>
-        <div class="card-actions">
-          <button class="action-btn ${isLiked ? 'liked' : ''}" id="like-btn-${post.id}" type="button" onclick="toggleLike(${post.id})">
-            <img src="/Like.jpg" alt="Like" class="like-img">
-            <span id="like-count-${post.id}">${post.likes}</span>
-          </button>
-          <span style="color: var(--muted); font-size: 0.85rem;">💬 Give Me Advice</span>
-        </div>
-        <div class="comments-section">
-          <div class="comment-list" id="comment-list-${post.id}">
-            ${post.comments.map(c => `<div class="comment-item">${escapeHtml(c.text)}</div>`).join('')}
-          </div>
-          <form class="comment-form" onsubmit="sendComment(event, ${post.id})">
-            <input type="text" id="input-${post.id}" class="comment-input" placeholder="एक सम्मानजनक टिप्पणी लिखें..." maxlength="200" required>
-            <button type="submit" class="submit-btn">भेजें</button>
-          </form>
-        </div>
-      `;
+      const isLiked = likedPosts.includes(postId);
+
+      // पोस्ट की सामग्री DOM methods से डालें।
+      const cardHeader = document.createElement('div');
+      cardHeader.className = 'card-header';
+
+      const heading = document.createElement('span');
+      heading.textContent = post.headerText || 'विचार';
+
+      const controls = document.createElement('div');
+      controls.className = 'admin-controls';
+
+      const editButton = document.createElement('button');
+      editButton.className = 'btn-edit';
+      editButton.type = 'button';
+      editButton.textContent = '✏️ Edit';
+      editButton.addEventListener('click', () => editPost(postId));
+
+      const deleteButton = document.createElement('button');
+      deleteButton.className = 'btn-delete';
+      deleteButton.type = 'button';
+      deleteButton.textContent = '🗑️ Delete';
+      deleteButton.addEventListener('click', () => deletePost(postId));
+
+      controls.append(editButton, deleteButton);
+      cardHeader.append(heading, controls);
+
+      const body = document.createElement('div');
+      body.className = 'card-body';
+      body.textContent = post.content || '';
+
+      const actions = document.createElement('div');
+      actions.className = 'card-actions';
+
+      const likeButton = document.createElement('button');
+      likeButton.className = `action-btn${isLiked ? ' liked' : ''}`;
+      likeButton.id = getElementId('like-btn-', postId);
+      likeButton.type = 'button';
+
+      const likeImage = document.createElement('img');
+      likeImage.src = '/Like.jpg';
+      likeImage.alt = 'Like';
+      likeImage.className = 'like-img';
+      likeImage.onerror = () => {
+        likeImage.replaceWith(document.createTextNode('❤️'));
+      };
+
+      const likeCount = document.createElement('span');
+      likeCount.id = getElementId('like-count-', postId);
+      likeCount.textContent = String(post.likes ?? 0);
+
+      likeButton.append(likeImage, likeCount);
+      likeButton.addEventListener('click', () => toggleLike(postId));
+
+      const advice = document.createElement('span');
+      advice.style.color = 'var(--muted)';
+      advice.style.fontSize = '0.85rem';
+      advice.textContent = '💬 Give Me Advice';
+
+      actions.append(likeButton, advice);
+
+      const commentsSection = document.createElement('div');
+      commentsSection.className = 'comments-section';
+
+      const commentList = document.createElement('div');
+      commentList.className = 'comment-list';
+      commentList.id = getElementId('comment-list-', postId);
+
+      (Array.isArray(post.comments) ? post.comments : []).forEach(comment => {
+        const item = document.createElement('div');
+        item.className = 'comment-item';
+        item.textContent = comment.text || '';
+        commentList.appendChild(item);
+      });
+
+      const form = document.createElement('form');
+      form.className = 'comment-form';
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'comment-input';
+      input.id = getElementId('input-', postId);
+      input.placeholder = 'एक सम्मानजनक टिप्पणी लिखें...';
+      input.maxLength = 200;
+      input.required = true;
+      input.setAttribute('aria-label', 'टिप्पणी लिखें');
+
+      const submit = document.createElement('button');
+      submit.className = 'submit-btn';
+      submit.type = 'submit';
+      submit.textContent = 'भेजें';
+
+      form.append(input, submit);
+      form.addEventListener('submit', event => sendComment(event, postId));
+
+      commentsSection.append(commentList, form);
+      card.append(cardHeader, body, actions, commentsSection);
+
       return card;
     }
 
-    // 1 लाइक सीमित करने का फ़ंक्शन (टॉगल लाइक/अनलाइक)
     function toggleLike(postId) {
-      let likedPosts = JSON.parse(localStorage.getItem('liked_posts') || '[]');
-      const btn = document.getElementById(`like-btn-${postId}`);
+      let likedPosts = JSON.parse(
+        localStorage.getItem('liked_posts') || '[]'
+      ).map(String);
 
-      if (likedPosts.includes(postId)) {
+      const button = document.getElementById(getElementId('like-btn-', postId));
+      const alreadyLiked = likedPosts.includes(postId);
+
+      if (alreadyLiked) {
         likedPosts = likedPosts.filter(id => id !== postId);
-        localStorage.setItem('liked_posts', JSON.stringify(likedPosts));
-        if (btn) btn.classList.remove('liked');
+        button?.classList.remove('liked');
         socket.emit('toggle-like', { postId, action: 'unlike' });
       } else {
         likedPosts.push(postId);
-        localStorage.setItem('liked_posts', JSON.stringify(likedPosts));
-        if (btn) btn.classList.add('liked');
+        button?.classList.add('liked');
         socket.emit('toggle-like', { postId, action: 'like' });
       }
+
+      localStorage.setItem('liked_posts', JSON.stringify(likedPosts));
     }
 
     async function editPost(postId) {
-      const bodyEl = document.querySelector(`#post-${postId} .card-body`);
-      const currentContent = bodyEl ? bodyEl.textContent : '';
-      
-      const newContent = prompt("विचार को संपादित करें:", currentContent);
+      const body = document.querySelector(
+        `#${CSS.escape(getElementId('post-', postId))} .card-body`
+      );
+      const currentContent = body?.textContent || '';
+
+      const newContent = prompt('विचार को संपादित करें:', currentContent);
       if (newContent === null || !newContent.trim()) return;
 
-      const password = prompt("एडमिन पासवर्ड दर्ज करें:");
+      const password = prompt('एडमिन पासवर्ड दर्ज करें:');
       if (!password) return;
 
-      const res = await fetch('/api/edit-thought', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password, postId, content: newContent })
-      });
+      try {
+        const response = await fetch('/api/edit-thought', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password, postId, content: newContent })
+        });
 
-      const data = await res.json();
-      if (!data.success) {
-        alert(data.message);
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          alert(data.message || 'विचार अपडेट नहीं हो पाया।');
+        }
+      } catch (error) {
+        console.error(error);
+        alert('सर्वर से संपर्क नहीं हो पाया। कृपया फिर कोशिश करें।');
       }
     }
 
     async function deletePost(postId) {
-      if (!confirm("क्या आप वाकई इस विचार को हटाना चाहते हैं?")) return;
+      if (!confirm('क्या आप वाकई इस विचार को हटाना चाहते हैं?')) return;
 
-      const password = prompt("हटाने के लिए एडमिन पासवर्ड दर्ज करें:");
+      const password = prompt('हटाने के लिए एडमिन पासवर्ड दर्ज करें:');
       if (!password) return;
 
-      const res = await fetch('/api/delete-thought', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password, postId })
-      });
+      try {
+        const response = await fetch('/api/delete-thought', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password, postId })
+        });
 
-      const data = await res.json();
-      if (!data.success) {
-        alert(data.message);
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          alert(data.message || 'विचार हटाया नहीं जा सका।');
+        }
+      } catch (error) {
+        console.error(error);
+        alert('सर्वर से संपर्क नहीं हो पाया। कृपया फिर कोशिश करें।');
       }
     }
 
     socket.on('update-likes', ({ postId, likes }) => {
-      const el = document.getElementById(`like-count-${postId}`);
-      if (el) el.innerText = likes;
+      const element = document.getElementById(
+        getElementId('like-count-', postId)
+      );
+      if (element) element.textContent = String(likes);
     });
 
-    function sendComment(e, postId) {
-      e.preventDefault();
-      const input = document.getElementById(`input-${postId}`);
-      const text = input.value.trim();
-      if (text) {
-        socket.emit('new-comment', { postId, text });
-        input.value = '';
-      }
+    function sendComment(event, postId) {
+      event.preventDefault();
+
+      const input = document.getElementById(
+        getElementId('input-', postId)
+      );
+      const text = input?.value.trim();
+
+      if (!text) return;
+
+      socket.emit('new-comment', { postId, text });
+      input.value = '';
     }
 
     socket.on('comment-added', ({ postId, comment }) => {
-      const list = document.getElementById(`comment-list-${postId}`);
-      if (list) {
-        const item = document.createElement('div');
-        item.className = 'comment-item';
-        item.textContent = comment.text;
-        list.appendChild(item);
-        list.scrollTop = list.scrollHeight;
-      }
-    });
+      const list = document.getElementById(
+        getElementId('comment-list-', postId)
+      );
 
-    function escapeHtml(str) {
-      const div = document.createElement('div');
-      div.innerText = str;
-      return div.innerHTML;
-    }
+      if (!list) return;
+
+      const item = document.createElement('div');
+      item.className = 'comment-item';
+      item.textContent = comment.text || '';
+      list.appendChild(item);
+      list.scrollTop = list.scrollHeight;
+    });
   </script>
 </body>
 </html>
