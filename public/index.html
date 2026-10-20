@@ -130,13 +130,29 @@
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       font-size: 0.95rem;
       transition: color 0.2s;
     }
 
-    .action-btn:hover, .action-btn.liked {
+    .like-img {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid transparent;
+      vertical-align: middle;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .action-btn.liked .like-img {
+      border-color: var(--accent);
+      transform: scale(1.15);
+    }
+
+    .action-btn.liked span {
       color: var(--accent);
+      font-weight: bold;
     }
 
     .comments-section {
@@ -256,7 +272,8 @@
         <div class="card-body">${escapeHtml(post.content)}</div>
         <div class="card-actions">
           <button class="action-btn ${isLiked ? 'liked' : ''}" id="like-btn-${post.id}" type="button" onclick="toggleLike(${post.id})">
-            ❤️ <span id="like-count-${post.id}">${post.likes}</span>
+            <img src="/Like.jpg" alt="Like" class="like-img">
+            <span id="like-count-${post.id}">${post.likes}</span>
           </button>
           <span style="color: var(--muted); font-size: 0.85rem;">💬 Give Me Advice</span>
         </div>
@@ -279,13 +296,11 @@
       const btn = document.getElementById(`like-btn-${postId}`);
 
       if (likedPosts.includes(postId)) {
-        // अगर पहले से लाइक है, तो अनलाइक करें
         likedPosts = likedPosts.filter(id => id !== postId);
         localStorage.setItem('liked_posts', JSON.stringify(likedPosts));
         if (btn) btn.classList.remove('liked');
         socket.emit('toggle-like', { postId, action: 'unlike' });
       } else {
-        // पहली बार लाइक कर रहा है
         likedPosts.push(postId);
         localStorage.setItem('liked_posts', JSON.stringify(likedPosts));
         if (btn) btn.classList.add('liked');
