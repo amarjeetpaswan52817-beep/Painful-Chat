@@ -1,91 +1,212 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PAINFUL Chat</title>
+  <title>PAINFUL — दिल के विचार</title>
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #111;
-      color: white;
+    :root {
+      --bg: #0d1117;
+      --card-bg: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #f85149;
+      --accent-hover: #ff7b72;
     }
-    header {
-      padding: 20px;
-      text-align: center;
-      background: #242424;
-      font-size: 25px;
-      letter-spacing: 4px;
-    }
-    #messages {
-      list-style: none;
-      padding: 15px;
-      padding-bottom: 90px;
-    }
-    #messages li {
-      background: #292929;
-      padding: 12px;
-      margin-bottom: 10px;
-      border-radius: 10px;
-      overflow-wrap: anywhere;
-    }
-    form {
-      position: fixed;
-      bottom: 0;
-      display: flex;
-      width: 100%;
-      background: #242424;
-      padding: 12px;
+
+    * {
       box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 20px 12px;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+    }
+
+    header {
+      text-align: center;
+      padding: 24px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      letter-spacing: 2px;
+      color: #fff;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-top: 6px;
+    }
+
+    .feed {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-bottom: 12px;
+    }
+
+    .card-body {
+      font-size: 1.05rem;
+      line-height: 1.6;
+      white-space: pre-line;
+      margin-bottom: 16px;
+      color: #f0f6fc;
+    }
+
+    .card-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+    }
+
+    .action-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+    }
+
+    .action-btn:hover, .action-btn.liked {
+      color: var(--accent);
+    }
+
+    .comments-section {
+      margin-top: 14px;
+      border-top: 1px solid #21262d;
+      padding-top: 12px;
+    }
+
+    .comment-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .comment-item {
+      background: #0d1117;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      border: 1px solid var(--border);
+    }
+
+    .comment-form {
+      display: flex;
       gap: 8px;
     }
-    input {
+
+    .comment-input {
       flex: 1;
-      min-width: 0;
-      padding: 12px;
-      border-radius: 8px;
-      border: none;
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
     }
-    button {
-      padding: 12px 18px;
+
+    .comment-input:focus {
+      border-color: #58a6ff;
+    }
+
+    .submit-btn {
+      background: #238636;
+      color: #fff;
       border: none;
-      border-radius: 8px;
-      background: white;
+      border-radius: 6px;
+      padding: 8px 14px;
       cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .submit-btn:hover {
+      background: #2ea043;
     }
   </style>
 </head>
 <body>
-  <header>PAINFUL</header>
-  <ul id="messages"></ul>
 
-  <form id="form">
-    <input id="message" placeholder="Write your thought..." autocomplete="off" required>
-    <button>Send</button>
-  </form>
+  <div class="container">
+    <header>
+      <h1>PAINFUL</h1>
+      <p>कुछ अनकहे शब्द, दिल के जज़्बात</p>
+    </header>
+
+    <div class="feed" id="feed">
+      <!-- उदाहरण पोस्ट (डेटाबेस जुड़ने पर यह अपने आप सर्वर से लोड होगा) -->
+      <article class="card">
+        <div class="card-header">
+          <span>अमरजीत</span>
+          <span>अभी-अभी</span>
+        </div>
+        <div class="card-body">
+          "मैं अमरजीत मैं आजकल यहीं Backchodi करता हूँ।"
+        </div>
+        <div class="card-actions">
+          <button class="action-btn" type="button">❤️ <span class="like-count">0</span></button>
+          <span style="color: var(--muted); font-size: 0.85rem;">💬 Give Me Advice</span>
+        </div>
+        
+        <div class="comments-section">
+          <div class="comment-list">
+            <div class="comment-item">☠️ WELCOME TO THE HARAMI ZONE ☠️</div>
+          </div>
+          <form class="comment-form" onsubmit="event.preventDefault();">
+            <input type="text" class="comment-input" placeholder="एक सम्मानजनक टिप्पणी लिखें..." maxlength="200" required>
+            <button type="submit" class="submit-btn">भेजें</button>
+          </form>
+        </div>
+      </article>
+    </div>
+  </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
-    const form = document.getElementById("form");
-    const input = document.getElementById("message");
-    const messages = document.getElementById("messages");
-
-    form.addEventListener("submit", function(event) {
-      event.preventDefault();
-      if (input.value.trim()) {
-        socket.emit("chat message", input.value.trim());
-        input.value = "";
-      }
-    });
-
-    socket.on("chat message", function(msg) {
-      const item = document.createElement("li");
-      item.textContent = msg;
-      messages.appendChild(item);
-      window.scrollTo(0, document.body.scrollHeight);
-    });
+    // सर्वर से डेटा का आदान-प्रदान हम अगले चरण में जोड़ेंगे
   </script>
 </body>
 </html>
