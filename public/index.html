@@ -3,154 +3,167 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chapter15</title>
-  <script src="/socket.io/socket.io.js"></script>
+  <title>CHAPTER 15 — दिल के विचार</title>
   <style>
     :root {
       --bg: #0d1117;
       --card-bg: #161b22;
       --border: #30363d;
-      --text: #c9d1d9;
-      --heading: #f0f6fc;
-      --accent: #f85149;
+      --text: #e6edf3;
       --muted: #8b949e;
-      --btn-green: #238636;
+      --accent: #f85149;
     }
+
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
+
     body {
       background-color: var(--bg);
       color: var(--text);
       display: flex;
       justify-content: center;
-      padding: 24px 16px;
+      padding: 20px 12px;
       min-height: 100vh;
     }
+
     .container {
       width: 100%;
-      max-width: 520px;
+      max-width: 600px;
     }
+
     header {
       text-align: center;
+      padding: 24px 0;
+      border-bottom: 1px solid var(--border);
       margin-bottom: 24px;
     }
-    h1 {
-      font-size: 28px;
-      letter-spacing: 1.5px;
-      color: var(--accent);
-      text-transform: uppercase;
+
+    header h1 {
+      font-size: 2rem;
+      letter-spacing: 2px;
+      color: #fff;
     }
-    .subtitle {
+
+    header p {
       color: var(--muted);
-      font-size: 14px;
-      margin-top: 4px;
+      font-size: 0.95rem;
+      margin-top: 6px;
     }
+
+    .feed {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
     .card {
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 18px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
+
     .card-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      color: var(--muted);
+      font-size: 0.8rem;
       margin-bottom: 12px;
     }
-    .card-header span {
-      background: #21262d;
-      color: #58a6ff;
-      font-size: 12px;
-      font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 20px;
-      border: 1px solid var(--border);
-    }
+
     .card-body {
-      font-size: 16px;
+      font-size: 1.05rem;
       line-height: 1.6;
-      color: var(--heading);
+      white-space: pre-line;
       margin-bottom: 16px;
-      font-weight: 500;
+      color: #f0f6fc;
     }
+
     .card-actions {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 16px;
+      border-top: 1px solid var(--border);
       padding-top: 12px;
-      border-top: 1px solid #21262d;
-      margin-bottom: 16px;
     }
+
     .action-btn {
-      background: #21262d;
-      border: 1px solid var(--border);
-      color: var(--accent);
-      padding: 7px 14px;
-      border-radius: 20px;
+      background: none;
+      border: none;
+      color: var(--muted);
       cursor: pointer;
-      font-size: 14px;
-      font-weight: 600;
-      display: inline-flex;
+      display: flex;
       align-items: center;
       gap: 6px;
-      transition: background 0.2s, transform 0.1s;
+      font-size: 0.95rem;
+      transition: color 0.2s;
     }
-    .action-btn:active {
-      transform: scale(0.95);
-      background: #30363d;
+
+    .action-btn:hover {
+      color: var(--accent);
     }
+
     .comments-section {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+      margin-top: 14px;
+      border-top: 1px solid #21262d;
+      padding-top: 12px;
     }
-    .comment-input-box {
-      display: flex;
-      gap: 8px;
-    }
-    input[type="text"] {
-      flex: 1;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 9px 12px;
-      color: #fff;
-      font-size: 14px;
-      outline: none;
-    }
-    input[type="text"]:focus {
-      border-color: #58a6ff;
-    }
-    .send-btn {
-      background: var(--btn-green);
-      color: #fff;
-      border: none;
-      padding: 0 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 14px;
-    }
+
     .comment-list {
       display: flex;
       flex-direction: column;
       gap: 8px;
+      margin-bottom: 12px;
+      max-height: 200px;
+      overflow-y: auto;
     }
+
     .comment-item {
-      background: var(--bg);
-      border: 1px solid #21262d;
-      padding: 10px 12px;
+      background: #0d1117;
+      padding: 8px 12px;
       border-radius: 8px;
-      font-size: 13.5px;
-      line-height: 1.5;
-      color: var(--text);
+      font-size: 0.9rem;
+      border: 1px solid var(--border);
       word-break: break-word;
+    }
+
+    .comment-form {
+      display: flex;
+      gap: 8px;
+    }
+
+    .comment-input {
+      flex: 1;
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .comment-input:focus {
+      border-color: #58a6ff;
+    }
+
+    .submit-btn {
+      background: #238636;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .submit-btn:hover {
+      background: #2ea043;
     }
   </style>
 </head>
@@ -158,79 +171,96 @@
 
   <div class="container">
     <header>
-      <h1>Chapter15</h1>
-      <p class="subtitle">मेरे दिल के कुछ अनकहे अहसास</p>
+      <h1>CHAPTER 15</h1>
+      <p>कुछ अनकहे शब्द, दिल के जज़्बात</p>
     </header>
 
-    <div class="card">
-      <div class="card-header">
-        <span>Day 1</span>
-      </div>
-
-      <div class="card-body">
-        "मैं अमरजीत मैं आजकल यहीं Backchodi करते हैं।"
-      </div>
-
-      <div class="card-actions">
-        <button class="action-btn" id="likeBtn" type="button">
-          ❤️ <span class="like-count" id="likeCount">0</span>
-        </button>
-        <span style="color: var(--muted); font-size: 0.85rem;">💬 Give Me Advice</span>
-      </div>
-      
-      <div class="comments-section">
-        <div class="comment-input-box">
-          <input type="text" id="commentInput" placeholder="Give advice / अपनी बात लिखें..." maxlength="150" />
-          <button class="send-btn" id="sendBtn">भेजें</button>
-        </div>
-
-        <div class="comment-list" id="commentsList">
-          <div class="comment-item">कुछ बातें लफ़्ज़ों से बयाँ नहीं होतीं, बस दिल के किसी कोने में खामोश रहती हैं...</div>
-        </div>
-      </div>
+    <div class="feed" id="feed">
+      <!-- सारे विचार यहाँ क्रम से दिखेंगे -->
     </div>
   </div>
 
+  <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
+    const feed = document.getElementById('feed');
 
-    const likeBtn = document.getElementById('likeBtn');
-    const likeCount = document.getElementById('likeCount');
-    const commentInput = document.getElementById('commentInput');
-    const sendBtn = document.getElementById('sendBtn');
-    const commentsList = document.getElementById('commentsList');
-
-    // लाइक भेजना
-    likeBtn.addEventListener('click', () => {
-      socket.emit('like');
+    // सर्वर से सभी पोस्ट्स लोड करना
+    socket.on('load-posts', (posts) => {
+      feed.innerHTML = '';
+      posts.forEach(post => feed.appendChild(createPostCard(post)));
     });
 
-    // सर्वर से लाइक संख्या मिलना
-    socket.on('updateLikes', (count) => {
-      likeCount.innerText = count;
+    // नया विचार आने पर उसे नीचे (अंत में) जोड़ना
+    socket.on('new-post-added', (post) => {
+      const card = createPostCard(post);
+      feed.appendChild(card);
     });
 
-    // कमेंट भेजना
-    function sendComment() {
-      const text = commentInput.value.trim();
-      if (text.length > 0) {
-        socket.emit('newComment', text);
-        commentInput.value = '';
+    function createPostCard(post) {
+      const card = document.createElement('article');
+      card.className = 'card';
+      card.id = `post-${post.id}`;
+
+      card.innerHTML = `
+        <div class="card-header">
+          <span>${escapeHtml(post.headerText)}</span>
+        </div>
+        <div class="card-body">${escapeHtml(post.content)}</div>
+        <div class="card-actions">
+          <button class="action-btn" type="button" onclick="sendLike(${post.id})">
+            ❤️ <span id="like-count-${post.id}">${post.likes}</span>
+          </button>
+          <span style="color: var(--muted); font-size: 0.85rem;">💬 Give Me Advice</span>
+        </div>
+        <div class="comments-section">
+          <div class="comment-list" id="comment-list-${post.id}">
+            ${post.comments.map(c => `<div class="comment-item">${escapeHtml(c.text)}</div>`).join('')}
+          </div>
+          <form class="comment-form" onsubmit="sendComment(event, ${post.id})">
+            <input type="text" id="input-${post.id}" class="comment-input" placeholder="एक सम्मानजनक टिप्पणी लिखें..." maxlength="200" required>
+            <button type="submit" class="submit-btn">भेजें</button>
+          </form>
+        </div>
+      `;
+      return card;
+    }
+
+    function sendLike(postId) {
+      socket.emit('like-post', postId);
+    }
+
+    socket.on('update-likes', ({ postId, likes }) => {
+      const el = document.getElementById(`like-count-${postId}`);
+      if (el) el.innerText = likes;
+    });
+
+    function sendComment(e, postId) {
+      e.preventDefault();
+      const input = document.getElementById(`input-${postId}`);
+      const text = input.value.trim();
+      if (text) {
+        socket.emit('new-comment', { postId, text });
+        input.value = '';
       }
     }
 
-    sendBtn.addEventListener('click', sendComment);
-    commentInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') sendComment();
+    socket.on('comment-added', ({ postId, comment }) => {
+      const list = document.getElementById(`comment-list-${postId}`);
+      if (list) {
+        const item = document.createElement('div');
+        item.className = 'comment-item';
+        item.textContent = comment.text;
+        list.appendChild(item);
+        list.scrollTop = list.scrollHeight;
+      }
     });
 
-    // नया कमेंट लिस्ट में जोड़ना
-    socket.on('showComment', (text) => {
+    function escapeHtml(str) {
       const div = document.createElement('div');
-      div.className = 'comment-item';
-      div.innerText = text;
-      commentsList.prepend(div);
-    });
+      div.innerText = str;
+      return div.innerHTML;
+    }
   </script>
 </body>
 </html>
