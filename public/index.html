@@ -3,167 +3,154 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PAINFUL — दिल के विचार</title>
+  <title>Chapter15</title>
+  <script src="/socket.io/socket.io.js"></script>
   <style>
     :root {
       --bg: #0d1117;
       --card-bg: #161b22;
       --border: #30363d;
-      --text: #e6edf3;
-      --muted: #8b949e;
+      --text: #c9d1d9;
+      --heading: #f0f6fc;
       --accent: #f85149;
-      --accent-hover: #ff7b72;
+      --muted: #8b949e;
+      --btn-green: #238636;
     }
-
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
-
     body {
       background-color: var(--bg);
       color: var(--text);
       display: flex;
       justify-content: center;
-      padding: 20px 12px;
+      padding: 24px 16px;
       min-height: 100vh;
     }
-
     .container {
       width: 100%;
-      max-width: 600px;
+      max-width: 520px;
     }
-
     header {
       text-align: center;
-      padding: 24px 0;
-      border-bottom: 1px solid var(--border);
       margin-bottom: 24px;
     }
-
-    header h1 {
-      font-size: 2rem;
-      letter-spacing: 2px;
-      color: #fff;
+    h1 {
+      font-size: 28px;
+      letter-spacing: 1.5px;
+      color: var(--accent);
+      text-transform: uppercase;
     }
-
-    header p {
+    .subtitle {
       color: var(--muted);
-      font-size: 0.95rem;
-      margin-top: 6px;
+      font-size: 14px;
+      margin-top: 4px;
     }
-
-    .feed {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
     .card {
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 18px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
-
     .card-header {
       display: flex;
       justify-content: space-between;
-      color: var(--muted);
-      font-size: 0.8rem;
+      align-items: center;
       margin-bottom: 12px;
     }
-
-    .card-body {
-      font-size: 1.05rem;
-      line-height: 1.6;
-      white-space: pre-line;
-      margin-bottom: 16px;
-      color: #f0f6fc;
+    .card-header span {
+      background: #21262d;
+      color: #58a6ff;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
     }
-
+    .card-body {
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--heading);
+      margin-bottom: 16px;
+      font-weight: 500;
+    }
     .card-actions {
       display: flex;
       align-items: center;
-      gap: 16px;
-      border-top: 1px solid var(--border);
+      gap: 14px;
       padding-top: 12px;
+      border-top: 1px solid #21262d;
+      margin-bottom: 16px;
     }
-
     .action-btn {
-      background: none;
-      border: none;
-      color: var(--muted);
+      background: #21262d;
+      border: 1px solid var(--border);
+      color: var(--accent);
+      padding: 7px 14px;
+      border-radius: 20px;
       cursor: pointer;
-      display: flex;
+      font-size: 14px;
+      font-weight: 600;
+      display: inline-flex;
       align-items: center;
       gap: 6px;
-      font-size: 0.95rem;
-      transition: color 0.2s;
+      transition: background 0.2s, transform 0.1s;
     }
-
-    .action-btn:hover, .action-btn.liked {
-      color: var(--accent);
+    .action-btn:active {
+      transform: scale(0.95);
+      background: #30363d;
     }
-
     .comments-section {
-      margin-top: 14px;
-      border-top: 1px solid #21262d;
-      padding-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
-
+    .comment-input-box {
+      display: flex;
+      gap: 8px;
+    }
+    input[type="text"] {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+    }
+    input[type="text"]:focus {
+      border-color: #58a6ff;
+    }
+    .send-btn {
+      background: var(--btn-green);
+      color: #fff;
+      border: none;
+      padding: 0 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+    }
     .comment-list {
       display: flex;
       flex-direction: column;
       gap: 8px;
-      margin-bottom: 12px;
-      max-height: 200px;
-      overflow-y: auto;
     }
-
     .comment-item {
-      background: #0d1117;
-      padding: 8px 12px;
+      background: var(--bg);
+      border: 1px solid #21262d;
+      padding: 10px 12px;
       border-radius: 8px;
-      font-size: 0.9rem;
-      border: 1px solid var(--border);
-    }
-
-    .comment-form {
-      display: flex;
-      gap: 8px;
-    }
-
-    .comment-input {
-      flex: 1;
-      background: #0d1117;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 8px 12px;
+      font-size: 13.5px;
+      line-height: 1.5;
       color: var(--text);
-      font-size: 0.9rem;
-      outline: none;
-    }
-
-    .comment-input:focus {
-      border-color: #58a6ff;
-    }
-
-    .submit-btn {
-      background: #238636;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      padding: 8px 14px;
-      cursor: pointer;
-      font-size: 0.9rem;
-    }
-
-    .submit-btn:hover {
-      background: #2ea043;
+      word-break: break-word;
     }
   </style>
 </head>
@@ -171,91 +158,79 @@
 
   <div class="container">
     <header>
-      <h1>PAINFUL</h1>
-      <p>कुछ अनकहे शब्द, दिल के जज़्बात</p>
+      <h1>Chapter15</h1>
+      <p class="subtitle">मेरे दिल के कुछ अनकहे अहसास</p>
     </header>
 
-    <div class="feed" id="feed">
-      <!-- उदाहरण पोस्ट (डेटाबेस जुड़ने पर यह अपने आप सर्वर से लोड होगा) -->
-      <article class="card">
-        <div class="card-header">
-          <span>Day 1</span>
+    <div class="card">
+      <div class="card-header">
+        <span>Day 1</span>
+      </div>
+
+      <div class="card-body">
+        "मैं अमरजीत मैं आजकल यहीं Backchodi करते हैं।"
+      </div>
+
+      <div class="card-actions">
+        <button class="action-btn" id="likeBtn" type="button">
+          ❤️ <span class="like-count" id="likeCount">0</span>
+        </button>
+        <span style="color: var(--muted); font-size: 0.85rem;">💬 Give Me Advice</span>
+      </div>
+      
+      <div class="comments-section">
+        <div class="comment-input-box">
+          <input type="text" id="commentInput" placeholder="Give advice / अपनी बात लिखें..." maxlength="150" />
+          <button class="send-btn" id="sendBtn">भेजें</button>
         </div>
-        <div class="card-body">
-          "मैं अमरजीत मैं आजकल यहीं Backchodi करते हैं।"
+
+        <div class="comment-list" id="commentsList">
+          <div class="comment-item">कुछ बातें लफ़्ज़ों में बयाँ नहीं होतीं, बस दिल के किसी कोने में खामोश रहती हैं...</div>
         </div>
-        <div class="card-actions">
-          <button class="action-btn" type="button">❤️ <span class="like-count">0</span></button>
-          <span style="color: var(--muted); font-size: 0.85rem;">💬 Give Me Advice</span>
-        </div>
-        
-        <div class="comments-section">
-          <div class="comment-list">
-            <div class="comment-item">☠️ WELCOME TO THE HARAMI ZONE ☠️</div>
-          </div>
-          <form class="comment-form" onsubmit="event.preventDefault();">
-            <input type="text" class="comment-input" placeholder="एक सम्मानजनक टिप्पणी लिखें..." maxlength="200" required>
-            <button type="submit" class="submit-btn">भेजें</button>
-          </form>
-        </div>
-      </article>
+      </div>
     </div>
   </div>
 
-  <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
 
-    const likeBtn = document.querySelector('.action-btn');
-    const likeCountSpan = document.querySelector('.like-count');
-    const commentList = document.querySelector('.comment-list');
-    const commentForm = document.querySelector('.comment-form');
-    const commentInput = document.querySelector('.comment-input');
+    const likeBtn = document.getElementById('likeBtn');
+    const likeCount = document.getElementById('likeCount');
+    const commentInput = document.getElementById('commentInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const commentsList = document.getElementById('commentsList');
 
-    // सर्वर से शुरुआती डेटा प्राप्त करना
-    socket.on('init-data', (data) => {
-      likeCountSpan.innerText = data.likes;
-      
-      // कमेंट्स लोड करना
-      commentList.innerHTML = '';
-      data.comments.forEach(c => {
-        addCommentToUI(c.text);
-      });
-    });
-
-    // लाइक बटन पर क्लिक होने पर
+    // लाइक भेजना
     likeBtn.addEventListener('click', () => {
-      socket.emit('like-click');
-      likeBtn.classList.add('liked');
+      socket.emit('like');
     });
 
-    // सर्वर से लाइक की नई संख्या मिलना
-    socket.on('update-likes', (count) => {
-      likeCountSpan.innerText = count;
+    // सर्वर से लाइक संख्या मिलना
+    socket.on('updateLikes', (count) => {
+      likeCount.innerText = count;
     });
 
-    // कमेंट फॉर्म सबमिट होने पर
-    commentForm.onsubmit = function(e) {
-      e.preventDefault();
+    // कमेंट भेजना
+    function sendComment() {
       const text = commentInput.value.trim();
-      if (text) {
-        socket.emit('new-comment', text);
+      if (text.length > 0) {
+        socket.emit('newComment', text);
         commentInput.value = '';
       }
-    };
+    }
 
-    // नया कमेंट स्क्रीन पर जोड़ना
-    socket.on('comment-added', (text) => {
-      addCommentToUI(text);
+    sendBtn.addEventListener('click', sendComment);
+    commentInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendComment();
     });
 
-    function addCommentToUI(text) {
-      const item = document.createElement('div');
-      item.className = 'comment-item';
-      item.textContent = text;
-      commentList.appendChild(item);
-      commentList.scrollTop = commentList.scrollHeight;
-    }
+    // नया कमेंट लिस्ट में जोड़ना
+    socket.on('showComment', (text) => {
+      const div = document.createElement('div');
+      div.className = 'comment-item';
+      div.innerText = text;
+      commentsList.prepend(div);
+    });
   </script>
 </body>
 </html>
