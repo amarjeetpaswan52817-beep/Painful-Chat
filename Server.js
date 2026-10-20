@@ -10,7 +10,7 @@ const io = new Server(server);
 const PORT = process.env.PORT || 3000;
 
 // आपका एडमिन पासवर्ड
-const ADMIN_PASSWORD = "painful@amarjeet";
+const ADMIN_PASSWORD = "Amar@123";
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
