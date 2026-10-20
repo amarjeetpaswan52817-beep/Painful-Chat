@@ -135,7 +135,7 @@
       transition: color 0.2s;
     }
 
-    .action-btn:hover {
+    .action-btn:hover, .action-btn.liked {
       color: var(--accent);
     }
 
@@ -241,6 +241,10 @@
       card.className = 'card';
       card.id = `post-${post.id}`;
 
+      // जाँचें कि क्या यूज़र ने इस पोस्ट को पहले से लाइक किया हुआ है
+      const likedPosts = JSON.parse(localStorage.getItem('liked_posts') || '[]');
+      const isLiked = likedPosts.includes(post.id);
+
       card.innerHTML = `
         <div class="card-header">
           <span>${escapeHtml(post.headerText)}</span>
@@ -251,7 +255,7 @@
         </div>
         <div class="card-body">${escapeHtml(post.content)}</div>
         <div class="card-actions">
-          <button class="action-btn" type="button" onclick="sendLike(${post.id})">
+          <button class="action-btn ${isLiked ? 'liked' : ''}" id="like-btn-${post.id}" type="button" onclick="toggleLike(${post.id})">
             ❤️ <span id="like-count-${post.id}">${post.likes}</span>
           </button>
           <span style="color: var(--muted); font-size: 0.85rem;">💬 Give Me Advice</span>
@@ -267,6 +271,26 @@
         </div>
       `;
       return card;
+    }
+
+    // 1 लाइक सीमित करने का फ़ंक्शन (टॉगल लाइक/अनलाइक)
+    function toggleLike(postId) {
+      let likedPosts = JSON.parse(localStorage.getItem('liked_posts') || '[]');
+      const btn = document.getElementById(`like-btn-${postId}`);
+
+      if (likedPosts.includes(postId)) {
+        // अगर पहले से लाइक है, तो अनलाइक करें
+        likedPosts = likedPosts.filter(id => id !== postId);
+        localStorage.setItem('liked_posts', JSON.stringify(likedPosts));
+        if (btn) btn.classList.remove('liked');
+        socket.emit('toggle-like', { postId, action: 'unlike' });
+      } else {
+        // पहली बार लाइक कर रहा है
+        likedPosts.push(postId);
+        localStorage.setItem('liked_posts', JSON.stringify(likedPosts));
+        if (btn) btn.classList.add('liked');
+        socket.emit('toggle-like', { postId, action: 'like' });
+      }
     }
 
     async function editPost(postId) {
@@ -307,10 +331,6 @@
       if (!data.success) {
         alert(data.message);
       }
-    }
-
-    function sendLike(postId) {
-      socket.emit('like-post', postId);
     }
 
     socket.on('update-likes', ({ postId, likes }) => {
