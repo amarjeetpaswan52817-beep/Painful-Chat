@@ -87,10 +87,15 @@ app.post('/api/delete-thought', (req, res) => {
 io.on('connection', (socket) => {
   socket.emit('load-posts', posts);
 
-  socket.on('like-post', (postId) => {
+// लाइक या अनलाइक हैंडल करना
+  socket.on('toggle-like', ({ postId, action }) => {
     const post = posts.find(p => p.id === postId);
     if (post) {
-      post.likes += 1;
+      if (action === 'like') {
+        post.likes += 1;
+      } else if (action === 'unlike' && post.likes > 0) {
+        post.likes -= 1;
+      }
       io.emit('update-likes', { postId: post.id, likes: post.likes });
     }
   });
