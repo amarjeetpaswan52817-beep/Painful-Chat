@@ -205,7 +205,57 @@
   <script src="/socket.io/socket.io.js"></script>
   <script>
     const socket = io();
-    // सर्वर से डेटा का आदान-प्रदान हम अगले चरण में जोड़ेंगे
+
+    const likeBtn = document.querySelector('.action-btn');
+    const likeCountSpan = document.querySelector('.like-count');
+    const commentList = document.querySelector('.comment-list');
+    const commentForm = document.querySelector('.comment-form');
+    const commentInput = document.querySelector('.comment-input');
+
+    // सर्वर से शुरुआती डेटा प्राप्त करना
+    socket.on('init-data', (data) => {
+      likeCountSpan.innerText = data.likes;
+      
+      // कमेंट्स लोड करना
+      commentList.innerHTML = '';
+      data.comments.forEach(c => {
+        addCommentToUI(c.text);
+      });
+    });
+
+    // लाइक बटन पर क्लिक होने पर
+    likeBtn.addEventListener('click', () => {
+      socket.emit('like-click');
+      likeBtn.classList.add('liked');
+    });
+
+    // सर्वर से लाइक की नई संख्या मिलना
+    socket.on('update-likes', (count) => {
+      likeCountSpan.innerText = count;
+    });
+
+    // कमेंट फॉर्म सबमिट होने पर
+    commentForm.onsubmit = function(e) {
+      e.preventDefault();
+      const text = commentInput.value.trim();
+      if (text) {
+        socket.emit('new-comment', text);
+        commentInput.value = '';
+      }
+    };
+
+    // नया कमेंट स्क्रीन पर जोड़ना
+    socket.on('comment-added', (text) => {
+      addCommentToUI(text);
+    });
+
+    function addCommentToUI(text) {
+      const item = document.createElement('div');
+      item.className = 'comment-item';
+      item.textContent = text;
+      commentList.appendChild(item);
+      commentList.scrollTop = commentList.scrollHeight;
+    }
   </script>
 </body>
 </html>
