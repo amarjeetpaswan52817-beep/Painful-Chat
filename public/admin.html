@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CHAPTER 15 — एडमिन पैनल</title>
+  <style>
+    body {
+      background-color: #0d1117;
+      color: #e6edf3;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      display: flex;
+      justify-content: center;
+      padding: 30px 16px;
+    }
+    .panel {
+      width: 100%;
+      max-width: 480px;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 24px;
+    }
+    h2 {
+      margin-bottom: 20px;
+      text-align: center;
+      color: #f85149;
+    }
+    label {
+      display: block;
+      margin-top: 14px;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+      color: #8b949e;
+    }
+    input, textarea {
+      width: 100%;
+      box-sizing: border-box;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 10px;
+      color: #fff;
+      font-size: 0.95rem;
+      outline: none;
+    }
+    input:focus, textarea:focus {
+      border-color: #58a6ff;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+    button {
+      margin-top: 22px;
+      width: 100%;
+      background: #238636;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #2ea043;
+    }
+    #msg {
+      margin-top: 14px;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="panel">
+    <h2>CHAPTER 15 एडमिन</h2>
+    <form id="thoughtForm">
+      <label>एडमिन पासवर्ड:</label>
+      <input type="password" id="password" placeholder="पासवर्ड डालें..." required>
+
+      <label>शीर्षक (जैसे Day 2):</label>
+      <input type="text" id="headerText" placeholder="उदा. Day 2">
+
+      <label>आपका विचार (दिल की बात):</label>
+      <textarea id="content" placeholder="यहाँ अपने विचार लिखें..." required></textarea>
+
+      <button type="submit">सीधे वेबसाइट पर पोस्ट करें 🚀</button>
+    </form>
+    <div id="msg"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById('thoughtForm');
+    const msg = document.getElementById('msg');
+
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      msg.innerText = "पोस्ट हो रहा है...";
+      msg.style.color = "#8b949e";
+
+      const password = document.getElementById('password').value;
+      const headerText = document.getElementById('headerText').value;
+      const content = document.getElementById('content').value;
+
+      try {
+        const res = await fetch('/api/new-thought', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password, headerText, content })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          msg.innerText = "✅ " + data.message;
+          msg.style.color = "#3fb950";
+          document.getElementById('content').value = '';
+          document.getElementById('headerText').value = '';
+        } else {
+          msg.innerText = "❌ " + data.message;
+          msg.style.color = "#f85149";
+        }
+      } catch (err) {
+        msg.innerText = "❌ कुछ गड़बड़ हुई, इंटरनेट जाँचें!";
+        msg.style.color = "#f85149";
+      }
+    };
+  </script>
+</body>
+</html>
