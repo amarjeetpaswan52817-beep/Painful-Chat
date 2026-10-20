@@ -71,9 +71,40 @@
     .card-header {
       display: flex;
       justify-content: space-between;
+      align-items: center;
       color: var(--muted);
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       margin-bottom: 12px;
+    }
+
+    .admin-controls {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-edit, .btn-delete {
+      background: none;
+      border: none;
+      font-size: 0.8rem;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .btn-edit {
+      color: #58a6ff;
+    }
+
+    .btn-edit:hover {
+      text-decoration: underline;
+    }
+
+    .btn-delete {
+      color: #f85149;
+    }
+
+    .btn-delete:hover {
+      text-decoration: underline;
     }
 
     .card-body {
@@ -176,7 +207,7 @@
     </header>
 
     <div class="feed" id="feed">
-      <!-- सारे विचार यहाँ क्रम से दिखेंगे -->
+      <!-- सारे विचार यहाँ दिखेंगे -->
     </div>
   </div>
 
@@ -185,16 +216,24 @@
     const socket = io();
     const feed = document.getElementById('feed');
 
-    // सर्वर से सभी पोस्ट्स लोड करना
     socket.on('load-posts', (posts) => {
       feed.innerHTML = '';
       posts.forEach(post => feed.appendChild(createPostCard(post)));
     });
 
-    // नया विचार आने पर उसे नीचे (अंत में) जोड़ना
     socket.on('new-post-added', (post) => {
       const card = createPostCard(post);
       feed.appendChild(card);
+    });
+
+    socket.on('post-updated', ({ postId, content }) => {
+      const bodyEl = document.querySelector(`#post-${postId} .card-body`);
+      if (bodyEl) bodyEl.textContent = content;
+    });
+
+    socket.on('post-deleted', (postId) => {
+      const card = document.getElementById(`post-${postId}`);
+      if (card) card.remove();
     });
 
     function createPostCard(post) {
@@ -205,6 +244,10 @@
       card.innerHTML = `
         <div class="card-header">
           <span>${escapeHtml(post.headerText)}</span>
+          <div class="admin-controls">
+            <button class="btn-edit" onclick="editPost(${post.id})">✏️ Edit</button>
+            <button class="btn-delete" onclick="deletePost(${post.id})">🗑️ Delete</button>
+          </div>
         </div>
         <div class="card-body">${escapeHtml(post.content)}</div>
         <div class="card-actions">
@@ -224,6 +267,46 @@
         </div>
       `;
       return card;
+    }
+
+    async function editPost(postId) {
+      const bodyEl = document.querySelector(`#post-${postId} .card-body`);
+      const currentContent = bodyEl ? bodyEl.textContent : '';
+      
+      const newContent = prompt("विचार को संपादित करें:", currentContent);
+      if (newContent === null || !newContent.trim()) return;
+
+      const password = prompt("एडमिन पासवर्ड दर्ज करें:");
+      if (!password) return;
+
+      const res = await fetch('/api/edit-thought', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password, postId, content: newContent })
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        alert(data.message);
+      }
+    }
+
+    async function deletePost(postId) {
+      if (!confirm("क्या आप वाकई इस विचार को हटाना चाहते हैं?")) return;
+
+      const password = prompt("हटाने के लिए एडमिन पासवर्ड दर्ज करें:");
+      if (!password) return;
+
+      const res = await fetch('/api/delete-thought', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password, postId })
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        alert(data.message);
+      }
     }
 
     function sendLike(postId) {
