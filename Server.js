@@ -2,117 +2,156 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const mongoose = require('mongoose');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
 const PORT = process.env.PORT || 3000;
-
-// आपका एडमिन पासवर्ड
-const ADMIN_PASSWORD = "Amar@123";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "Amar@123";
+const MONGO_URI = process.env.MONGO_URI;
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-// पोस्ट्स की सूची
-let posts = [
-  {
-    id: 1,
-    headerText: "Day 1",
-    content: "मैं अमरजीत मैं आजकल यहीं Backchodi करते हैं।",
-    likes: 0,
-    comments: [
-      { text: "कुछ बातें लफ़्ज़ों से बयाँ नहीं होतीं, बस दिल के किसी कोने में खामोश रहती हैं" }
-    ]
-  }
-];
+// MongoDB Schema
+const postSchema = new mongoose.Schema({
+  headerText: { type: String, default: "Day 1" },
+  content: { type: String, required: true },
+  likes: { type: Number, default: 0 },
+  comments: [{ text: String }],
+  createdAt: { type: Date, default: Date.now }
+});
 
-// नया विचार जोड़ने के लिए एडमिन API
-app.post('/api/new-thought', (req, res) => {
+const Post = mongoose.model('Post', postSchema);
+
+// Database Connection
+if (MONGO_URI) {
+  mongoose.connect(MONGO_URI)
+    .then(() => console.log("MongoDB Atlas connected successfully!"))
+    .catch(err => console.error("MongoDB Connection Error:", err));
+} else {
+  console.log("Warning: MONGO_URI not set!");
+}
+
+// Naya thought add karne ki API
+app.post('/api/new-thought', async (req, res) => {
   const { password, headerText, content } = req.body;
 
   if (password !== ADMIN_PASSWORD) {
-    return res.status(401).json({ success: false, message: "गलत पासवर्ड!" });
+    return res.status(401).json({ success: false, message: "Galat Password!" });
   }
 
   if (!content || !content.trim()) {
-    return res.status(400).json({ success: false, message: "विचार खाली नहीं हो सकता!" });
+    return res.status(400).json({ success: false, message: "Thought khali nahi ho sakta!" });
   }
 
-  const newPost = {
-    id: Date.now(),
-    headerText: headerText.trim() || `Day ${posts.length + 1}`,
-    content: content.trim(),
-    likes: 0,
-    comments: []
-  };
+  try {
+    const count = await Post.countDocuments();
+    const newPost = new Post({
+      headerText: headerText.trim() || `Day ${count + 1}`,
+      content: content.trim(),
+      likes: 0,
+      comments: []
+    });
 
-  posts.push(newPost);
-  io.emit('new-post-added', newPost);
-  res.json({ success: true, message: "विचार सफलतापूर्वक नीचे जुड़ गया!" });
+    await newPost.save();
+    io.emit('new-post-added', newPost);
+    res.json({ success: true, message: "Thought database me save ho gaya!" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Server error!" });
+  }
 });
 
-// विचार संपादित (Edit) करने के लिए API
-app.post('/api/edit-thought', (req, res) => {
+// Edit API
+app.post('/api/edit-thought', async (req, res) => {
   const { password, postId, content } = req.body;
 
   if (password !== ADMIN_PASSWORD) {
-    return res.status(401).json({ success: false, message: "गलत पासवर्ड!" });
+    return res.status(401).json({ success: false, message: "Galat Password!" });
   }
 
-  const post = posts.find(p => p.id === Number(postId));
-  if (!post) {
-    return res.status(404).json({ success: false, message: "पोस्ट नहीं मिली!" });
-  }
+  try {
+    const post = await Post.findById(postId);
+    if (!post) return res.status(404).json({ success: false, message: "Post nahi mili!" });
 
-  post.content = String(content || '').trim();
-  io.emit('post-updated', { postId: post.id, content: post.content });
-  res.json({ success: true, message: "विचार सफलतापूर्वक अपडेट हो गया!" });
+    post.content = String(content || '').trim();
+    await post.save();
+
+    io.emit('post-updated', { postId: post._id, content: post.content });
+    res.json({ success: true, message: "Thought update ho gaya!" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Update nahi ho paya!" });
+  }
 });
 
-// विचार हटाने (Delete) के लिए API
-app.post('/api/delete-thought', (req, res) => {
+// Delete API
+app.post('/api/delete-thought', async (req, res) => {
   const { password, postId } = req.body;
 
   if (password !== ADMIN_PASSWORD) {
-    return res.status(401).json({ success: false, message: "गलत पासवर्ड!" });
+    return res.status(401).json({ success: false, message: "Galat Password!" });
   }
 
-  posts = posts.filter(p => p.id !== Number(postId));
-  io.emit('post-deleted', Number(postId));
-  res.json({ success: true, message: "विचार सफलतापूर्वक हटा दिया गया!" });
+  try {
+    await Post.findByIdAndDelete(postId);
+    io.emit('post-deleted', postId);
+    res.json({ success: true, message: "Thought delete ho gaya!" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Delete nahi ho saka!" });
+  }
 });
 
-io.on('connection', (socket) => {
-  socket.emit('load-posts', posts);
+io.on('connection', async (socket) => {
+  try {
+    // Database se sabhi posts load karna
+    const posts = await Post.find().sort({ createdAt: 1 });
+    socket.emit('load-posts', posts);
+  } catch (err) {
+    console.error(err);
+  }
 
-// लाइक या अनलाइक हैंडल करना
-  socket.on('toggle-like', ({ postId, action }) => {
-    const post = posts.find(p => p.id === postId);
-    if (post) {
-      if (action === 'like') {
-        post.likes += 1;
-      } else if (action === 'unlike' && post.likes > 0) {
-        post.likes -= 1;
+  // Like Toggle
+  socket.on('toggle-like', async ({ postId, action }) => {
+    try {
+      const update = action === 'like' ? 1 : -1;
+      const post = await Post.findByIdAndUpdate(
+        postId,
+        { $inc: { likes: update } },
+        { new: true }
+      );
+      if (post && post.likes < 0) {
+        post.likes = 0;
+        await post.save();
       }
-      io.emit('update-likes', { postId: post.id, likes: post.likes });
+      if (post) {
+        io.emit('update-likes', { postId: post._id, likes: post.likes });
+      }
+    } catch (err) {
+      console.error(err);
     }
   });
 
-  socket.on('new-comment', ({ postId, text }) => {
+  // Comment
+  socket.on('new-comment', async ({ postId, text }) => {
     const cleanText = String(text || '').trim().slice(0, 200);
     if (!cleanText) return;
 
-    const post = posts.find(p => p.id === postId);
-    if (post) {
-      const commentObj = { text: cleanText };
-      post.comments.push(commentObj);
-      io.emit('comment-added', { postId: post.id, comment: commentObj });
+    try {
+      const post = await Post.findById(postId);
+      if (post) {
+        const commentObj = { text: cleanText };
+        post.comments.push(commentObj);
+        await post.save();
+        io.emit('comment-added', { postId: post._id, comment: commentObj });
+      }
+    } catch (err) {
+      console.error(err);
     }
   });
 });
 
 server.listen(PORT, () => {
-  console.log(`CHAPTER 15 सर्वर पोर्ट ${PORT} पर चालू है`);
+  console.log(`CHAPTER 15 server port ${PORT} par chal raha hai`);
 });
