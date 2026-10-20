@@ -255,7 +255,7 @@
     function createPostCard(post) {
       const card = document.createElement('article');
       card.className = 'card';
-      card.id = `post-${post.id}`;
+      card.id = `post-${post._id}`;
 
       // जाँचें कि क्या यूज़र ने इस पोस्ट को पहले से लाइक किया हुआ है
       const likedPosts = JSON.parse(localStorage.getItem('liked_posts') || '[]');
